@@ -1,0 +1,203 @@
+{% extends 'shop/basic.html' %}
+{% block title %} Checkout - My Awesome Cart{% endblock %}
+{% block body %}
+<div class="container">
+    <div class="col my-4">
+        <h2>Step 1 - StudyAreaLive Cart Express Checkout - Review Your Cart Items</h2>
+        <div class="my-4">
+            <ul class="list-group" id="items">
+            </ul>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mt-3">
+                    <li class="breadcrumb-item active" aria-current="page">Your Cart Total Is <b>Rs. <span id="totalPrice"></span></b>. Enter your details below & place your order. Thanks for using My Awesome Cart!</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    <div class="col my-4">
+        <h2>Step 2 - Enter Address & Other Details:</h2>
+        <form id="checkoutForm" method="post" action="/shop/checkout/">{% csrf_token %}
+            <input type="hidden" name="itemsJson" id="itemsJson">
+            <input type="hidden" name="amount" id="amount">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputname">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Name">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="inputEmail4">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputCity">City</label>
+                    <input type="text" class="form-control" id="city" name="city">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="inputState">State</label>
+                    <input type="text" class="form-control" id="state" name="state"  placeholder="Enter State">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputZip">Phone Number</label>
+                <input type="tel" class="form-control" id="phone" name="phone">
+            </div>
+            <button id="placeOrderButton" type="button" class="btn btn-primary">Pay amount</button>
+        </form>
+
+        <form id="screenshotForm">
+            
+                <style>
+                    .popup {
+    width: 300px;
+    background: white;
+    padding: 30px 20px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    border-radius: 10px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 1000;
+}
+
+.popup.open-popup {
+    display: block;
+}
+
+.popup img {
+    width: 50px;
+    height: 50px;
+}
+
+.popup h2 {
+    font-size: 24px;
+    margin: 10px 0;
+}
+
+.popup p {
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.popup button {
+            width: 100%;
+            margin-top: 50px;
+            padding: 10px 0;
+            background: #6fd649;
+            color: #fff;
+            border: 0;
+            outline: none;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+                </style>
+                <div>
+                    <br>
+                    <label for="">First Complete Payment Step. Then</label>
+                <label for="formFileLg" class="form-label">Upload Successful Payment Screenshot</label>
+                <input class="form-control form-control-lg" id="formFileLg" type="file" accept="image/*" multiple name="files" required>
+                <br>
+                <button id="submitScreenshotButton" type="button" class="btn btn-primary">Submit Screenshot</button>
+            </div>
+            <br>
+        </form>
+
+        <div class="popup" id="popup">
+            
+            <h2>Thank You!</h2>
+            <p>Your details have been successfully submitted. Thanks! Our Team Deliver Your Product Through Whatsapp/Telegram Using The Information That You Provide.</p>
+            <button type="button" onclick="closePopup()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden link that will be clicked programmatically -->
+<a id="paymentLink" href="#" style="display:none;">Payment Link</a>
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let popup = document.getElementById("popup");
+
+    function openPopup() {
+        popup.classList.add("open-popup");
+    }
+
+    function closePopup() {
+        popup.classList.remove("open-popup");
+    }
+
+    document.getElementById('submitScreenshotButton').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+        openPopup();
+        
+        setTimeout(function() {
+            document.getElementById('screenshotForm').submit();
+        }, 9000); // Wait for 2 seconds before submitting the form
+    });
+
+    // Your existing cart functionality
+    if (localStorage.getItem('cart') == null) {
+        var cart = {};
+    } else {
+        cart = JSON.parse(localStorage.getItem('cart'));
+    }
+    console.log(cart);
+    var sum = 0;
+    var totalPrice = 0;
+
+    if ($.isEmptyObject(cart)) {
+        // if object is empty
+        mystr = `<p>Your cart is empty, please add some items to your cart before checking out!</p>`;
+        $('#items').append(mystr);
+    } else {
+        for (item in cart) {
+            let name = cart[item][1];
+            let qty = cart[item][0];
+            let itemPrice = cart[item][2];
+            sum = sum + qty;
+            totalPrice = totalPrice + qty * itemPrice;
+            mystr = `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${name}
+                        <span class="badge badge-primary badge-pill">${qty}</span>
+                    </li>`;
+            $('#items').append(mystr);
+        }
+    }
+
+    document.getElementById('cart').innerHTML = sum;
+    document.getElementById('totalPrice').innerHTML = totalPrice;
+    $('#itemsJson').val(JSON.stringify(cart));
+    $('#amount').val($('#totalPrice').html());
+
+    document.getElementById('placeOrderButton').addEventListener('click', function() {
+        // Get the current price
+        var price = document.getElementById('totalPrice').innerText;
+
+        // Generate the payment link with the updated price
+        var paymentLink = 'upi://pay?pa=smahamuni545@oksbi&pn=YourName&am=' + price + '&cu=INR&tn=Payment%20for%20services';
+
+        // Set the href of the hidden link
+        var hiddenLink = document.getElementById('paymentLink');
+        hiddenLink.href = paymentLink;
+
+        // Programmatically click the hidden link
+        hiddenLink.click();
+
+        // Submit the form after a short delay to ensure the payment link is processed
+        setTimeout(function() {
+            document.getElementById('checkoutForm').submit();
+        }, 500); // Adjust the delay as needed
+    });
+});
+</script>
+{% endblock %}
