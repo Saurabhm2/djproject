@@ -25,7 +25,7 @@ SECRET_KEY = '9h_#wy*6)%#ug3-uv@7xlryan5a36rqe^j5a$-i0@fo9szu=%n'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['https://djproject-1.onrender.com']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -124,3 +124,8 @@ STATIC_URL = '/static/'
 # Managing media
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+
+# settings.py
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
